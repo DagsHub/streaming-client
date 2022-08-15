@@ -7,14 +7,35 @@ from os import PathLike
 
 from errno import EACCES
 from threading import Lock
-
+          
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 from typing import Optional, TypeVar 
+from collections import namedtuple
 from pathlib import Path
 import requests
 import json
 
 T = TypeVar('T')
+
+StatT = namedtuple('StatT', ['st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid', 'st_size', 'st_atime', 'st_mtime', 'st_ctime'])
+"""
+st_mode:  protection bits
+st_ino:   inode number
+st_dev:   device
+st_nlink: number of hard links
+st_uid:   user ID of owner
+st_gid:   group ID of owner
+st_size:  size of file, in bytes
+st_atime: time of most recent access
+st_mtime: time of most recent content modification
+st_ctime: platform dependent; time of most recent metadata change on Unix,
+          or the time of creation on Windows
+"""
+stat_zero = StatT(17407, 0, 0, 19, 0, 0, 440, 1660409656.4133525, 1660491930.1484191, 1660491930.1484191)
+
+def copy_stat(st, **kwargs):
+    result = StatT(*st)
+    return result._replace(**kwargs)
 
 class Loopback(LoggingMixIn, Operations):
     def __init__(self, url: str, 
@@ -89,7 +110,6 @@ class Loopback(LoggingMixIn, Operations):
         try:
             return self.__open(file, mode, *args, **kwargs)
         except FileNotFoundError as e:
-            print('JINEN DEBUG:: OPEN')
             relative_path = self._relative_path(file)
             if relative_path:
                 resp = requests.get(f'{self.raw_api_url}/{relative_path}', auth=self.auth)
@@ -107,9 +127,7 @@ class Loopback(LoggingMixIn, Operations):
                 raise e
 
     def _relative_path(self, file: PathLike):
-        print("DEBUG JINEN", file)
         path = Path(file).absolute()
-        print("DEBUG JINEN", path)
         if path.is_relative_to(self.project_root.absolute()):
             return path.relative_to(self.project_root.absolute())
         else:
@@ -121,7 +139,9 @@ class Loopback(LoggingMixIn, Operations):
         try:
             return self.__stat(path)
         except FileNotFoundError as e:
-            print('JINEN DEBUG:: STAT')
+            return stat_zero
+
+            """
             relative_path = self._relative_path(path)
             if relative_path:
                 # TODO: check single file content API instead of directory when it becomes available
@@ -143,6 +163,7 @@ class Loopback(LoggingMixIn, Operations):
                     raise FileNotFoundError
             else:
                 raise e
+            """
 
     def read(self, path, size, offset, fh):
         with self.rwlock:
@@ -190,8 +211,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('root')
     parser.add_argument('mount')
+    parser.add_argument('-u', '--username')
+    parser.add_argument('-t', '--token')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG)
     fuse = FUSE(
-        Loopback(args.root), args.mount, foreground=True, allow_other=True)
+        Loopback(args.root, args.mount, args.username, args.token), args.mount, foreground=True, allow_other=True)
