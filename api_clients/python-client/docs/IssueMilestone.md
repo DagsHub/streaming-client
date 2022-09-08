@@ -1,0 +1,16 @@
+# IssueMilestone
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**id** | **int** |  | [optional] 
+**title** | **str** |  | [optional] 
+**description** | **str** |  | [optional] 
+**state** | **str** |  | [optional] 
+**open_issues** | **int** |  | [optional] 
+**closed_issues** | **int** |  | [optional] 
+**closed_at** | **str** |  | [optional] 
+**due_on** | **str** |  | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
