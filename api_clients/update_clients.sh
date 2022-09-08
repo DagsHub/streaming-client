@@ -6,4 +6,29 @@ java -jar swagger-codegen-cli.jar generate \
 -l python \
 -o python-client
 
-# TODO: generate more SDKs
+java -jar swagger-codegen-cli.jar generate \
+-i https://dagshub.com/DAGsHub-Official/dagshub-docs/raw/openapi-spec-and-swagger-ui/theme/openapi/spec.yaml \
+-l r \
+-o r-client
+
+java -jar swagger-codegen-cli.jar generate \
+-i https://dagshub.com/DAGsHub-Official/dagshub-docs/raw/openapi-spec-and-swagger-ui/theme/openapi/spec.yaml \
+-l java \
+-o java-client
+
+java -jar swagger-codegen-cli.jar generate \
+-i https://dagshub.com/DAGsHub-Official/dagshub-docs/raw/openapi-spec-and-swagger-ui/theme/openapi/spec.yaml \
+-l csharp \
+-o C#-client
+
+java -jar swagger-codegen-cli.jar generate \
+-i https://dagshub.com/DAGsHub-Official/dagshub-docs/raw/openapi-spec-and-swagger-ui/theme/openapi/spec.yaml \
+-l go \
+-o go-client
+
+java -jar swagger-codegen-cli.jar generate \
+-i https://dagshub.com/DAGsHub-Official/dagshub-docs/raw/openapi-spec-and-swagger-ui/theme/openapi/spec.yaml \
+-l javascript \
+-o javascript-client
+
+# TODO: replace all 'openapi-spec-and-swagger-ui' witn 'main' when merged
