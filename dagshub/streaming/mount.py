@@ -1,17 +1,16 @@
-from argparse import ArgumentParser
-import argparse
-import logging
 import atexit
 import errno
 import os
+import sys
+import threading
+from argparse import ArgumentParser
 from os import PathLike
 from pathlib import Path
 from threading import Lock
-import threading
 from time import sleep
 from typing import Optional
 
-from fuse import FUSE, FuseOSError, Operations, LoggingMixIn, fuse_exit
+from fuse import FUSE, FuseOSError, LoggingMixIn, Operations, fuse_exit
 
 from .filesystem import SPECIAL_FILE, DagsHubFilesystem
 
@@ -113,7 +112,10 @@ def mount(background: bool = True,
             atexit.register(fuse_exit)
         FUSE(_fuse, str(_fuse.fs.project_root), foreground=True, nonempty=True)
 
-if __name__ == '__main__':
+def main():
+    # Hide tracebacks of errors, display only error message
+    sys.tracebacklimit = 0
+
     parser = ArgumentParser()
     parser.add_argument('project_root', nargs='?')
     parser.add_argument('--repo_url')
@@ -122,4 +124,8 @@ if __name__ == '__main__':
     parser.add_argument('--password')
 
     args = parser.parse_args()
-    mount(background=False, **vars(args))
+
+    mount(**vars(args))
+
+if __name__ == '__main__':
+	main()
