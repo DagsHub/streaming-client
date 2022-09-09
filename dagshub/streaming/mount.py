@@ -1,14 +1,17 @@
 from argparse import ArgumentParser
 import argparse
 import logging
+import atexit
 import errno
 import os
 from os import PathLike
 from pathlib import Path
 from threading import Lock
+import threading
+from time import sleep
 from typing import Optional
 
-from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
+from fuse import FUSE, FuseOSError, Operations, LoggingMixIn, fuse_exit
 
 from .filesystem import SPECIAL_FILE, DagsHubFilesystem
 
@@ -24,6 +27,14 @@ class DagsHubFUSE(LoggingMixIn, Operations):
         # FIXME TODO move autoconfiguration out of FUSE object constructor and to main method
         self.fs = DagsHubFilesystem(project_root=project_root, repo_url=repo_url, branch=branch, username=username, password=password)
         self.rwlock = Lock()
+        self.mounted = False
+
+    def init(self, path):
+        self.mounted = True
+
+    def destroy(self, path):
+        self.mounted = False
+        del self.fs
 
     def __call__(self, op, path, *args):
         return super(DagsHubFUSE, self).__call__(op, self.fs.project_root / path[1:], *args)
@@ -76,19 +87,31 @@ class DagsHubFUSE(LoggingMixIn, Operations):
         if fh != SPECIAL_FILE_FH: 
             return os.close(fh)
 
-def mount(debug=False,
+def mount(background: bool = True,
           project_root: Optional[PathLike] = None,
           repo_url: Optional[str] = None,
           branch: Optional[str] = None,
           username: Optional[str] = None,
-          password: Optional[str] = None):
-    logging.basicConfig(level=logging.DEBUG)
-    fuse = DagsHubFUSE(project_root=project_root, repo_url=repo_url, branch=branch, username=username, password=password)
-    print(f'Mounting DagsHubFUSE filesystem at {fuse.fs.project_root}\nRun `cd .` in any existing terminals to utilize mounted FS.')
-    FUSE(fuse, str(fuse.fs.project_root), foreground=debug, nonempty=True)
-    if not debug:
-        os.chdir(os.path.realpath(os.curdir))
-    # TODO: Clean unmounting procedure
+          password: Optional[str] = None,
+          _fuse: DagsHubFUSE = None,
+          _register_exit_hook: bool = False):
+    if _fuse is None:
+        _fuse = DagsHubFUSE(project_root=project_root, repo_url=repo_url, branch=branch, username=username, password=password)
+    if background:
+        threading.Thread(target=mount, name="DagsHub FUSE daemon", daemon=True, kwargs={
+                            "background": False,
+                            "_fuse": _fuse,
+                            "_register_exit_hook": True
+                        }
+                ).start()
+        while not _fuse.mounted:
+            sleep(0.1)
+        os.chdir(Path().absolute())
+    else:
+        print(f'\n\nMounting DagsHubFUSE filesystem at {_fuse.fs.project_root}\nRun `cd .` in any existing terminals to utilize mounted FS.\n\n')
+        if _register_exit_hook:
+            atexit.register(fuse_exit)
+        FUSE(_fuse, str(_fuse.fs.project_root), foreground=True, nonempty=True)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -97,10 +120,6 @@ if __name__ == '__main__':
     parser.add_argument('--branch')
     parser.add_argument('--username')
     parser.add_argument('--password')
-    parser.add_argument('--debug', action='store_false', default=False)#  default=False, nargs=0)
 
     args = parser.parse_args()
-    mount(**vars(args))
-
-
-
+    mount(background=False, **vars(args))
