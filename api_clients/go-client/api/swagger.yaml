@@ -1,0 +1,1605 @@
+openapi: 3.0.3
+info:
+  title: DagsHub API
+  description: |
+    This API is used to interact with DagsHub.
+  termsOfService: http://swagger.io/terms/
+  version: 1.0.0
+servers:
+- url: http://localhost:3000/api/v1/
+  description: Development server
+- url: http://dagshub.com/api/v1/
+  description: Production server
+- url: http://data-preview.dagops.dagshub.com/api/v1
+  description: Staging server
+- url: http://test.dagshub.com/api/v1
+  description: Test server
+security:
+- basicAuth: []
+- tokenAuth: []
+paths:
+  /repos/{owner}/{repo}/content/{branch}/{treePath}:
+    get:
+      tags:
+      - Content
+      summary: Get data from a folder in repository
+      description: ""
+      operationId: getContent
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: branch
+        in: path
+        description: branch of the repository
+        required: true
+        schema:
+          type: string
+      - name: treePath
+        in: path
+        description: path of a folter in the repository
+        required: true
+        schema:
+          type: string
+      - name: include_size
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Successfully retrived the data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Files'
+              example:
+              - path: images/000.png
+                type: file
+                size: 0
+                hash: 79fb7f8632d7e15b3b46a7411d08bcdd
+                versioning: dvc
+              - path: images/013.png
+                type: file
+                size: 0
+                hash: e1f7d72695c122ef88fddf57d6ccd306
+                versioning: dvc
+              - path: images/026.png
+                type: file
+                size: 0
+                hash: e7c01e50c1ef8f960ae65c9c2af8f5d9
+                versioning: dvc
+              - path: images/027.png
+                type: file
+                size: 0
+                hash: 2688c683b2fc2e05800628cee75fa6eb
+                versioning: dvc
+        "404":
+          description: Non existing path
+    put:
+      tags:
+      - Content
+      summary: Upload data to a repository
+      description: "last_commit - If the tip of the branch differs on the server at\
+        \ the moment of processing the request, the request is denied."
+      operationId: uploadContent
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: branch
+        in: path
+        description: branch of the repository
+        required: true
+        schema:
+          type: string
+      - name: treePath
+        in: path
+        description: path of a folter in the repository
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PutFile'
+      responses:
+        "200":
+          description: Successfully uploaded content
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+  /repos/{owner}/{repo}/issues:
+    get:
+      tags:
+      - Issues
+      summary: List issues for a repository
+      description: "This endpoint may also return pull requests in the response. If\
+        \ an issue is a pull request, the object will include a pull_request key."
+      operationId: listRepoIssues
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      responses:
+        "200":
+          description: Successfully retrived the data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issues'
+    post:
+      tags:
+      - Issues
+      summary: Create an issue
+      description: Any user with read access to a repository can create an issue.
+      operationId: createIssue
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostIssue'
+      responses:
+        "201":
+          description: Successfully created an issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+    patch:
+      tags:
+      - Issues
+      summary: Edit an issue
+      operationId: editIssue
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIssue'
+      responses:
+        "201":
+          description: Successfully created an issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+  /repos/{owner}/{repo}/issues/{index}:
+    get:
+      tags:
+      - Issues
+      summary: Get a single issue
+      description: "This endpoint may also return pull requests in the response. If\
+        \ an issue is a pull request, the object will include a pull_request key."
+      operationId: getIssue
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: index
+        in: path
+        description: the index of an issue or a pull request
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Successfully retrived the data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+  /repos/search:
+    get:
+      tags:
+      - Repository
+      summary: Search repositories
+      operationId: search
+      parameters:
+      - name: q
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: uid
+        in: query
+        description: User ID to specify search whose repositories. Default is 0 and
+          search all repositories
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 0
+      - name: limit
+        in: query
+        description: Maximum number of repositories in search results.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 10
+      - name: page
+        in: query
+        description: Page number. Default is 1.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 1
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                example:
+                  data:
+                  - id: 1717
+                    owner:
+                      id: 0
+                      username: ""
+                      full_name: ""
+                      email: ""
+                      avatar_url: ""
+                    full_name: unknwon/Issue-966
+                    private: false
+                    fork: false
+                    html_url: ""
+                    clone_url: ""
+                    ssh_url: ""
+                    permissions:
+                      admin: false
+                      push: false
+                      pull: false
+                  - id: 154
+                    owner:
+                      id: 0
+                      username: ""
+                      full_name: ""
+                      email: ""
+                      avatar_url: ""
+                    full_name: unknwon/issue935
+                    private: false
+                    fork: false
+                    html_url: ""
+                    clone_url: ""
+                    ssh_url: ""
+                    permissions:
+                      admin: false
+                      push: false
+                      pull: false
+                  ok: true
+                x-content-type: application/json
+  /user/repos:
+    get:
+      tags:
+      - Repository
+      summary: List your repositories
+      description: |
+        List repositories that are accessible to the authenticated user.
+
+        This includes repositories owned by the authenticated user, repositories where the authenticated user is a collaborator, and repositories that the authenticated user has access to through an organization membership.
+      operationId: listMyRepos
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                example:
+                - id: 2
+                  owner:
+                    id: 1
+                    username: unknwon
+                    full_name: ""
+                    email: fake@local
+                    avatar_url: /avatars/1
+                  full_name: unknwon/macaron
+                  private: false
+                  fork: false
+                  html_url: http://localhost:3000/unknwon/macaron
+                  clone_url: http://localhost:3000/unknwon/macaron.git
+                  ssh_url: jiahuachen@localhost:unknwon/macaron.git
+                  permissions:
+                    admin: true
+                    push: true
+                    pull: true
+                - id: 8
+                  owner:
+                    id: 2
+                    username: org1
+                    full_name: org1
+                    email: org1@org.com
+                    avatar_url: /avatars/2
+                  full_name: org1/gogs
+                  private: false
+                  fork: false
+                  html_url: http://localhost:3000/org1/gogs
+                  clone_url: http://localhost:3000/org1/gogs.git
+                  ssh_url: jiahuachen@localhost:org1/gogs.git
+                  permissions:
+                    admin: true
+                    push: true
+                    pull: true
+                x-content-type: application/json
+    post:
+      tags:
+      - Repository
+      summary: Create
+      description: Create a new repository for the authenticated user.
+      operationId: createRepo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRepo'
+      responses:
+        "201":
+          description: Created
+  /users/{username}/repos:
+    get:
+      tags:
+      - Repository
+      summary: List user repositories
+      description: List public repositories for the specified user.
+      operationId: listUserRepos
+      parameters:
+      - name: username
+        in: path
+        description: A DagsHub username
+        required: true
+        schema:
+          type: string
+        example: nirbarazida
+      responses:
+        "200":
+          description: Success
+  /orgs/{orgname}/repos:
+    get:
+      tags:
+      - Repository
+      summary: List organization repositories
+      description: List repositories that are accessible to the authenticated user.
+      operationId: listOrgRepos
+      parameters:
+      - name: orgname
+        in: path
+        description: A DagsHub organization name
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      responses:
+        "200":
+          description: Success
+  /org/{orgname}/repos:
+    post:
+      tags:
+      - Repository
+      summary: Create in organization
+      description: Create a new repository in this organization. The authenticated
+        user must be an **owner** of the specified organization.
+      operationId: createOrgRepo
+      parameters:
+      - name: orgname
+        in: path
+        description: A DagsHub organization name
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRepo'
+      responses:
+        "201":
+          description: Created
+  /repos/migrate:
+    post:
+      tags:
+      - Repository
+      summary: Migrate repository
+      description: |
+        Migrate a repository from other Git hosting sources for the authenticated user.
+
+        To migrate a repository for a organization, the authenticated user must be a **owner** of the specified organization.
+      operationId: migrateRepo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrateRepo'
+      responses:
+        "201":
+          description: Created
+  /repos/{username}/{repo}/raw/{ref}/{path}:
+    get:
+      tags:
+      - Content
+      summary: Download raw content
+      description: This method returns the raw content of a file.
+      operationId: getRaw
+      parameters:
+      - name: username
+        in: path
+        description: A DagsHub username
+        required: true
+        schema:
+          type: string
+        example: nirbarazida
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: ref
+        in: path
+        description: The name of the commit/branch/tag
+        required: true
+        schema:
+          type: string
+          example: master
+      - name: path
+        in: path
+        description: The content path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+  /repos/{username}/{repo}/archive/{ref}/{format}:
+    get:
+      tags:
+      - Content
+      summary: Download archive
+      description: This method returns archive by given format.
+      operationId: getArchive
+      parameters:
+      - name: username
+        in: path
+        description: A DagsHub username
+        required: true
+        schema:
+          type: string
+        example: nirbarazida
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: ref
+        in: path
+        description: The name of the commit/branch/tag
+        required: true
+        schema:
+          type: string
+          example: master
+      - name: format
+        in: path
+        description: "The format of archive, either .zip or .tar.gz"
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          enum:
+          - .zip
+          - .tar.gz
+      responses:
+        "200":
+          description: OK
+  /repos/{owner}/{repo}/branches:
+    get:
+      tags:
+      - Branches
+      summary: List Branches
+      operationId: listBranches
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+              - name: master
+                commit:
+                  id: c1c220c4dd6df895965a02b8be575c5e2f78dfd1
+                  message: "A commit message. \n"
+                  url: Not implemented
+                  author:
+                    name: Author Name
+                    email: author@email.com
+                    username: ""
+              - name: second-branch
+                commit:
+                  id: 0a0fdf63c23af6a2836c426c5284136015ec2996
+                  message: |
+                    A second commit message.
+                  url: Not implemented
+                  author:
+                    name: Author Name
+                    email: author@email.com
+                    username: ""
+  /repos/{owner}/{repo}/branches/{branch}:
+    get:
+      tags:
+      - Branches
+      summary: Get Branch
+      operationId: getBranch
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: branch
+        in: path
+        description: branch of the repository
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+                name: :branchname
+                commit:
+                  id: 0a0fdf63c23af6a2836c426c5284136015ec2996
+                  message: |
+                    A second commit message.
+                  url: Not implemented
+                  author:
+                    name: Author Name
+                    email: author@email.com
+                    username: ""
+  /repos/{username}/{repo}/collaborators/{collaborator}:
+    put:
+      tags:
+      - Collaborators
+      summary: Add user as a collaborator
+      operationId: addCollaborator
+      parameters:
+      - name: username
+        in: path
+        description: A DagsHub username
+        required: true
+        schema:
+          type: string
+        example: nirbarazida
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: collaborator
+        in: path
+        description: collaborator username
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/collaborators_collaborator_body'
+      responses:
+        "200":
+          description: Success
+    delete:
+      tags:
+      - Collaborators
+      summary: Delete collaborator
+      operationId: removeCollaborator
+      responses:
+        "204":
+          description: "No Content, deleted successfully"
+        "422":
+          description: User does not exist
+        "500":
+          description: Internal error
+  /repos/{username}/{repo}/collaborators:
+    get:
+      tags:
+      - Collaborators
+      summary: Get collaborators
+      operationId: getCollaborators
+      parameters:
+      - name: username
+        in: path
+        description: A DagsHub username
+        required: true
+        schema:
+          type: string
+        example: nirbarazida
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+              - id: 3
+                username: user1
+                login: user1
+                full_name: ""
+                email: user1@user.com
+                avatar_url: https://secure.gravatar.com/avatar/0207f4280f6c1bd45e1a2ed7cb1cca3d
+                permissions:
+                  admin: false
+                  push: true
+                  pull: true
+  /repos/{owner}/{repo}/commits/{sha}:
+    get:
+      tags:
+      - Commits
+      summary: Get a single commit
+      operationId: getCommit
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: sha
+        in: path
+        description: a SHA1 of a commit
+        required: true
+        schema:
+          type: string
+          example: 9227a50146b3fd815fe864af99b984c77d06326a
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+                url: https://try.gogs.io/api/v1/repos/unknwon/demo/commits/dc20792485ffd49b0bca49f90a8d44a16241b84a
+                sha: dc20792485ffd49b0bca49f90a8d44a16241b84a
+                html_url: https://try.gogs.io/unknwon/demo/commits/dc20792485ffd49b0bca49f90a8d44a16241b84a
+                commit:
+                  url: https://try.gogs.io/api/v1/repos/unknwon/demo/commits/dc20792485ffd49b0bca49f90a8d44a16241b84a
+                  author:
+                    name: unknwon
+                    email: u@gogs.io
+                    date: 2018-12-10T23:51:52-05:00
+                  committer:
+                    name: unknwon
+                    email: u@gogs.io
+                    date: 2018-12-10T23:51:52-05:00
+                  message: Update 'README.md'
+                  tree:
+                    url: https://try.gogs.io/api/v1/repos/unknwon/demo/tree/dc20792485ffd49b0bca49f90a8d44a16241b84a
+                    sha: dc20792485ffd49b0bca49f90a8d44a16241b84a
+                author:
+                  id: 1
+                  username: unknwon
+                  login: unknwon
+                  full_name: ""
+                  email: u@gogs.io
+                  avatar_url: https://secure.gravatar.com/avatar/d8b2871cdac01b57bbda23716cc03b96
+                committer:
+                  id: 1
+                  username: unknwon
+                  login: unknwon
+                  full_name: ""
+                  email: u@gogs.io
+                  avatar_url: https://secure.gravatar.com/avatar/d8b2871cdac01b57bbda23716cc03b96
+                parents:
+                - url: https://try.gogs.io/api/v1/unknwon/demo/commits/9227a50146b3fd815fe864af99b984c77d06326a
+                  sha: 9227a50146b3fd815fe864af99b984c77d06326a
+  /repos/{owner}/{repo}/commits/{ref}:
+    get:
+      tags:
+      - Commits
+      summary: Get the SHA-1 of a commit reference
+      operationId: getCommitSha1
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: ref
+        in: path
+        description: The name of the commit/branch/tag
+        required: true
+        schema:
+          type: string
+          example: master
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                x-content-type: application/json
+              example: dc20792485ffd49b0bca49f90a8d44a16241b84a
+  /repos/{owner}/{repo}/releases:
+    get:
+      tags:
+      - Releases
+      summary: List Releases
+      operationId: listReleases
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+              - id: 1
+                tag_name: sometag
+                target_commitish: master
+                name: awesome-release
+                body: Description of the release
+                draft: false
+                prerelease: false
+                author:
+                  id: 1
+                  username: Author Name
+                  login: ""
+                  full_name: ""
+                  email: author@email.com
+                  avatar_url: ""
+                created_at: 2020-03-28T13:38:00+03:00
+  /repos/{owner}/{repo}/hooks:
+    get:
+      tags:
+      - Webhooks
+      summary: List hooks
+      operationId: listHooks
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+              - id: 14
+                type: gogs
+                events:
+                - create
+                - push
+                active: true
+                config:
+                  content_type: json
+                  url: http://127.0.0.1:3000/unknwon/repo1/settings/hooks/14
+                updated_at: 2015-08-29T18:25:52+08:00
+                created_at: 2015-08-27T20:17:36+08:00
+              - id: 15
+                type: slack
+                events:
+                - create
+                - push
+                active: true
+                config:
+                  channel: '#gogs'
+                  color: good
+                  content_type: json
+                  icon_url: https://try.gogs.io/img/favicon.png
+                  url: https://hooks.slack.com/services/T03FHQZLC/B09QNJ2CU/n3nFHS3ISw
+                  username: Gogs
+                updated_at: 2015-08-29T18:25:55+08:00
+                created_at: 2015-08-28T23:28:09+08:00
+    post:
+      tags:
+      - Webhooks
+      summary: Create a hook
+      operationId: createHook
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/repo_hooks_body'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              example:
+                id: 20
+                type: gogs
+                config:
+                  content_type: json
+                  url: http://gogs.io
+                events:
+                - create
+                - push
+                active: true
+                updated_at: 2015-08-29T11:31:22.453572732+08:00
+                created_at: 2015-08-29T11:31:22.453569275+08:00
+  /repos/{owner}/{repo}/hooks/{id}:
+    delete:
+      tags:
+      - Webhooks
+      summary: Delete a hook
+      operationId: deleteHook
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "204":
+          description: "No Content, deleted successfully"
+    patch:
+      tags:
+      - Webhooks
+      summary: Edit a hook
+      operationId: editHook
+      parameters:
+      - name: owner
+        in: path
+        description: owner of the repository
+        required: true
+        schema:
+          type: string
+        example: DAGsHub-Official
+      - name: repo
+        in: path
+        description: name of the repository
+        required: true
+        schema:
+          type: string
+        example: dagshub-docs
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/hooks_id_body'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example:
+                id: 20
+                type: gogs
+                config:
+                  content_type: json
+                  url: http://gogs.io/hook
+                events:
+                - push
+                active: true
+                updated_at: 2015-08-29T11:45:30.577057789+08:00
+                created_at: 2015-08-29T11:31:22+08:00
+components:
+  schemas:
+    Files:
+      type: array
+      items:
+        $ref: '#/components/schemas/File'
+      x-schema-name: Files
+    PutFile:
+      required:
+      - commit_message
+      type: object
+      properties:
+        commit_summary:
+          type: string
+          example: '...'
+        commit_message:
+          type: string
+          example: '...'
+        commit_choice:
+          type: string
+          example: direct
+          enum:
+          - direct
+          - commit-to-new-branch
+        last_commit:
+          type: string
+          description: if omitted only new files will be accepted
+          example: 79fb7f8632d7e15b3b46a7411d08bcdd
+        new_branch_name:
+          type: string
+          example: new-branch
+        versioning:
+          type: string
+          example: dvc
+          enum:
+          - dvc
+          - git
+        files:
+          type: array
+          items:
+            type: object
+            example:
+              file1: new content
+    Issues:
+      type: array
+      items:
+        $ref: '#/components/schemas/Issue'
+      x-schema-name: Issues
+    PostIssue:
+      type: object
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        body:
+          $ref: '#/components/schemas/Body'
+        assignee:
+          $ref: '#/components/schemas/Assignee'
+        milestone:
+          $ref: '#/components/schemas/Milestone'
+        labels:
+          $ref: '#/components/schemas/Labels'
+        closed:
+          $ref: '#/components/schemas/Closed'
+    Issue:
+      required:
+      - assignee
+      - body
+      - closed
+      - labels
+      - milestone
+      - title
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+        title:
+          $ref: '#/components/schemas/Title'
+        body:
+          $ref: '#/components/schemas/Body'
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue_labels'
+        milestone:
+          $ref: '#/components/schemas/Issue_milestone'
+        assignee:
+          $ref: '#/components/schemas/Issue_assignee'
+        state:
+          type: string
+        comments:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        pull_request:
+          type: object
+        closed:
+          type: boolean
+      example:
+        id: 72
+        number: 1
+        state: open
+        title: test issue
+        body: ""
+        user:
+          id: 3
+          username: user1
+          full_name: ""
+          email: fake@local
+          avatar_url: https://secure.gravatar.com/avatar/0207f4280f6c1bd45e1a2ed7cb1cca3d
+        labels:
+        - bug
+        assignee: null
+        milestone: null
+        comments: 1
+        pull_request: null
+        created_at: 2016-03-05T13:18:51-05:00
+        updated_at: 2016-03-05T13:18:51-05:00
+    PatchIssue:
+      type: object
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        body:
+          $ref: '#/components/schemas/Body'
+        assignee:
+          $ref: '#/components/schemas/Assignee'
+        milestone:
+          $ref: '#/components/schemas/Milestone'
+        state:
+          $ref: '#/components/schemas/State'
+    CreateRepo:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name of the repository
+          example: repo-name
+        description:
+          type: string
+          description: A short description of the repository
+        private:
+          type: boolean
+          description: "Either true to create a private repository, or false to create\
+            \ a public one."
+          default: false
+        auto_init:
+          type: boolean
+          description: "Pass true to create an initial commit with README, .gitignore\
+            \ and LICENSE."
+          default: false
+        gitignores:
+          type: string
+          description: Desired language .gitignore templates to apply. Use the name
+            of the templates.
+          example: "Go, Sublime Text"
+        license:
+          type: string
+          description: Desired LICENSE template to apply. Use the name of the template.
+          example: MIT License
+          enum:
+          - Apache License 2.0
+          - MIT License
+          - Abstyles License
+          - Academic Free License v1.1
+          - Academic Free License v1.2
+          - Academic Free License v2.0
+          - Academic Free License v2.1
+          - Academic Free License v3.0
+          - Affero General Public License v1.0
+          - Apache License 1.0
+          - Apache License 1.1
+          - Artistic License 1.0
+          - Artistic License 2.0
+          - BSD 2-clause License
+          - BSD 3-clause License
+          - BSD 4-clause License
+          - Creative Commons CC0 1.0 Universal
+          - Eclipse Public License 1.0
+          - Educational Community License v1.0
+          - Educational Community License v2.0
+          - GNU Affero General Public License v3.0
+          - GNU Free Documentation License v1.1
+          - GNU Free Documentation License v1.2
+          - GNU Free Documentation License v1.3
+          - GNU General Public License v1.0
+          - GNU General Public License v2.0
+          - GNU General Public License v3.0
+          - GNU Lesser General Public License v2.1
+          - GNU Lesser General Public License v3.0
+          - GNU Library General Public License v2.0
+          - ISC license
+          - Mozilla Public License 1.0
+          - Mozilla Public License 1.1
+          - Mozilla Public License 2.03
+        readme:
+          type: string
+          description: Desired README template to apply. Use the name of the template.
+          default: Default
+    MigrateRepo:
+      required:
+      - clone_addr
+      - uid
+      type: object
+      properties:
+        clone_addr:
+          type: string
+          description: Remote Git address (HTTP/HTTPS URL or local path)
+        auth_username:
+          type: string
+          description: Authorization username
+        auth_password:
+          type: string
+          description: Authorization password
+        uid:
+          type: integer
+          description: User ID who takes ownership of this repository
+        repo_name:
+          type: string
+          description: Name of the repository
+          example: repo-name
+        mirror:
+          type: boolean
+          description: Repository will be a mirror (connected repository).
+          default: false
+        private:
+          type: boolean
+          description: Repository will be private.
+          default: false
+        description:
+          type: string
+          description: Description of the repository
+          example: '...'
+    WebhookConfig:
+      required:
+      - content_type
+      - url
+      type: object
+      properties:
+        url:
+          type: string
+          description: A string defining the URL to which the payloads will be delivered.
+          example: http://yourwebsite.io
+        content_type:
+          type: string
+          description: A string defining the media type used to serialize the payloads.
+          example: json
+          enum:
+          - json
+          - form
+        secret:
+          type: string
+          description: An optional string that's passed with the HTTP requests body.
+          example: supersecretkey
+      description: Key/value pairs to provide settings for this hook
+    WebhookEvents:
+      type: array
+      description: Determines what events the hook is triggered format.
+      example:
+      - create
+      - delete
+      - fork
+      - push
+      - issues
+      - issue_comment
+      - pull_request
+      - release
+      items:
+        type: object
+      default:
+      - push
+      x-schema-name: WebhookEvents
+    File:
+      type: object
+      properties:
+        path:
+          type: string
+          example: images/000.png
+        type:
+          type: string
+          example: file
+        size:
+          type: integer
+          format: int64
+          example: 421
+        hash:
+          type: string
+          example: 79fb7f8632d7e15b3b46a7411d08bcdd
+        versioning:
+          type: string
+          example: dvc
+        download_url:
+          type: string
+      example:
+        path: images/000.png
+        versioning: dvc
+        size: 421
+        download_url: download_url
+        type: file
+        hash: 79fb7f8632d7e15b3b46a7411d08bcdd
+    Title:
+      type: string
+      description: The title of the issue
+      example: Test Issue from API documentation
+    Body:
+      type: string
+      description: The contents of the issue.
+      example: "This issue was made from the API using [DagsHub docs](https://dagshub.com/docs/api)"
+    Assignee:
+      type: string
+      description: "Username for the user that this issue should be assigned to. \n\
+        \n**Note:** Only users with write access can set the assignee for new issues.\
+        \ \nThe assignee is silently dropped otherwise."
+    Milestone:
+      type: integer
+      description: "The **ID** of the milestone to associate this issue with. \n\n\
+        **Note:** Only users with write access can set the milestone for new issues.\
+        \ \nThe milestone is silently dropped otherwise."
+    Labels:
+      type: array
+      description: "Labels **ID** to associate with this issue. \n\n**Note:** Only\
+        \ users with write access can set labels for new issues. \nLabels are silently\
+        \ dropped otherwise."
+      items:
+        type: integer
+      x-schema-name: Labels
+    Closed:
+      type: boolean
+      description: Indicate initial issue state as closed (**true**) or open (**false**).
+      example: true
+      default: false
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        login:
+          type: string
+        full_name:
+          type: string
+        avatar_url:
+          type: string
+        username:
+          type: string
+      additionalProperties: false
+    State:
+      type: string
+      enum:
+      - open
+      - closed
+    collaborators_collaborator_body:
+      type: object
+      properties:
+        permission:
+          type: string
+          description: "The permission to grant the collaborator. Can be one of **read**,\
+            \ **write** and **admin**."
+          default: write
+    repo_hooks_body:
+      required:
+      - config
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of webhook
+          example: discord
+          enum:
+          - dagshub
+          - slack
+          - discord
+          - dingtalk
+        config:
+          $ref: '#/components/schemas/WebhookConfig'
+        events:
+          $ref: '#/components/schemas/WebhookEvents'
+    hooks_id_body:
+      type: object
+      properties:
+        config:
+          $ref: '#/components/schemas/WebhookConfig'
+        events:
+          $ref: '#/components/schemas/WebhookEvents'
+        active:
+          type: boolean
+          description: Weather the hook is actually triggered on pushes or not. Ignore
+            this field to leave it unchanged.
+    Issue_labels:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        url:
+          type: string
+    Issue_milestone:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+        open_issues:
+          type: integer
+        closed_issues:
+          type: integer
+        closed_at:
+          type: string
+        due_on:
+          type: string
+      additionalProperties: false
+    Issue_assignee:
+      type: object
+      properties:
+        id:
+          type: integer
+        login:
+          type: string
+        full_name:
+          type: string
+        avatar_url:
+          type: string
+        username:
+          type: string
+      additionalProperties: false
+  parameters:
+    Owner:
+      name: owner
+      in: path
+      description: owner of the repository
+      required: true
+      schema:
+        type: string
+      example: DAGsHub-Official
+    Repository:
+      name: repo
+      in: path
+      description: name of the repository
+      required: true
+      schema:
+        type: string
+      example: dagshub-docs
+    Branch:
+      name: branch
+      in: path
+      description: branch of the repository
+      required: true
+      schema:
+        type: string
+    TreePath:
+      name: treePath
+      in: path
+      description: path of a folter in the repository
+      required: true
+      schema:
+        type: string
+    Index:
+      name: index
+      in: path
+      description: the index of an issue or a pull request
+      required: true
+      schema:
+        type: integer
+    Username:
+      name: username
+      in: path
+      description: A DagsHub username
+      required: true
+      schema:
+        type: string
+      example: nirbarazida
+    Orgname:
+      name: orgname
+      in: path
+      description: A DagsHub organization name
+      required: true
+      schema:
+        type: string
+      example: DAGsHub-Official
+    Ref:
+      name: ref
+      in: path
+      description: The name of the commit/branch/tag
+      required: true
+      schema:
+        type: string
+        example: master
+    Collaborator:
+      name: collaborator
+      in: path
+      description: collaborator username
+      required: true
+      schema:
+        type: string
+    Sha:
+      name: sha
+      in: path
+      description: a SHA1 of a commit
+      required: true
+      schema:
+        type: string
+        example: 9227a50146b3fd815fe864af99b984c77d06326a
+  securitySchemes:
+    basicAuth:
+      type: http
+      description: |
+        Use your DagsHub username and password.
+      scheme: basic
+    tokenAuth:
+      type: apiKey
+      description: |
+        You can generate a token [here](http://dagshub.com/user/settings/tokens)
+      name: token
+      in: query
