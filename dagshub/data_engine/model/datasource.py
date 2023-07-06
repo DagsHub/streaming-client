@@ -310,7 +310,8 @@ class Datasource:
         with progress:
             for datapoint in datapoints.entries:
                 filepath = self.default_dataset_location / datapoint.path_in_repo
-                sample = fo.Sample(filepath=filepath)
+                sample = fo.Sample(filepath=datapoint.download_url)
+                sample.filepath = datapoint.download_url
                 sample["dagshub_download_url"] = datapoint.download_url
                 sample["datapoint_id"] = datapoint.datapoint_id
                 label_func(sample, datapoint, *annotation_columns)
