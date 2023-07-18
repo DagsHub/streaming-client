@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
 
+from dagshub.common import is_inside_colab
 from dagshub.data_engine.voxel_plugin_server.app import app
 from dagshub.data_engine.voxel_plugin_server.models import PluginServerState
 
@@ -25,24 +26,30 @@ class PluginServer:
         self._ev_loop = asyncio.new_event_loop()
 
         self._config = Config()
-        self._config.bind = [f"localhost:{DEFAULT_PORT}"]
+        self.server_address = self.generate_url()
+        print(f"URL: {self.server_address}")
+        self._config.bind = [f"0.0.0.0:{DEFAULT_PORT}"]
         self._state = state
 
-        self.set_dataset_config(self._state.voxel_session)
-
-        asyncio.set_event_loop(self._ev_loop)
         self._shutdown_event = asyncio.Event()
         self._thread = Thread(target=self._ev_loop.run_until_complete, args=(self.start_serve(),), daemon=True)
         self._thread.start()
 
-    @property
-    def server_address(self):
-        return f"http://{self._config.bind[0]}"
+    def generate_url(self):
+        if is_inside_colab():
+            from google.colab.output import eval_js
+            proxy_link = eval_js(f"google.colab.kernel.proxyPort({DEFAULT_PORT})")
+            return proxy_link
+        else:
+            return f"http://localhost:{DEFAULT_PORT}"
 
-    def set_dataset_config(self, session: "fo.Session"):
-        session.config.plugins["dagshub"] = {
+
+    def set_plugin_config(self, session: "fo.Session"):
+        dataset = session.dataset
+        dataset.app_config.plugins["dagshub"] = {
             "server": self.server_address
         }
+        dataset.save()
 
     async def start_serve(self):
         self.set_state(self._state)
@@ -51,6 +58,7 @@ class PluginServer:
     def set_state(self, state: PluginServerState):
         self._state = state
         app.state.PLUGIN_STATE = self._state
+        self.set_plugin_config(state.voxel_session)
 
     def stop(self):
         self._shutdown_event.set()
