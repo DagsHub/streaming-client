@@ -47,7 +47,8 @@ class PluginServer:
     def set_plugin_config(self, session: "fo.Session"):
         dataset = session.dataset
         dataset.app_config.plugins["dagshub"] = {
-            "server": self.server_address
+            "server": self.server_address,
+            "in_colab": is_inside_colab(),
         }
         dataset.save()
 
