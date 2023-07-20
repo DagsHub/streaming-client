@@ -5,8 +5,8 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple, Callable, Optional, List, Union, Dict, Literal
 
-import regex
 import rich.progress
+import re
 
 from dagshub.auth import get_token
 from dagshub.auth.token_auth import HTTPBearerAuth
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 DownloadFunctionType = Callable[[str, Path], None]
 
-storage_download_url_regex = regex.compile(
+storage_download_url_regex = re.compile(
     r".*/api/v1/repos/(?P<user>[\w\-_.]+)/(?P<repo>[\w\-_.]+)/storage/raw/(?P<proto>s3|gs)/"
     r"(?P<bucket>[a-z0-9.-]+)/(?P<path>.*)")
 
